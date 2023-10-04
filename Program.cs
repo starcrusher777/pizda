@@ -14,18 +14,49 @@ namespace HSRBot
 {
     class Program
     {
+        
         static ITelegramBotClient bot = new TelegramBotClient("6528515375:AAGH2grbOdX0Iee12YfePk0Ihbh51W_O95I");
 
+        static List<(long, string)> stages = new List<(long, string)>();
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             long? numbersChatId = null;
             long? daysChatId = null;
+            var message = update.Message;
+            
+            var chatStage = await getChatStage(message.Chat.Id);
+            if (!string.IsNullOrEmpty(chatStage))
+            {
+                switch (chatStage)
+                {
+                    case "Посчитать прыжки": await HandleReceivedNumbersAsync(message);
+                        break;
+                    case "Посчитать колличество нефрита через X дней": await HandleReceivedDaysAsync(message);
+                        break;
+                }
+                return;
+            }
+
+            if (message.Text == "Посчитать прыжки")
+            {
+                await botClient.SendTextMessageAsync(message.Chat.Id, "Вы выбрали посчитать прыжки, введите колличество нефрита");
+                await setChatInStage(message.Chat.Id, "Посчитать прыжки");
+                return;
+            }
+
+            if (message.Text == "Посчитать колличество нефрита через X дней")
+            {
+                await botClient.SendTextMessageAsync(message.Chat.Id, "Вы выбрали посчитать колличество нефрита через X дней, введите число дней");
+                await setChatInStage(message.Chat.Id, "Посчитать колличество нефрита через X дней");
+                return;
+            }
+            
             
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
            
             if (update.Type == UpdateType.Message)
             {
-                var message = update.Message;
+                
                 if (message.Text.ToLower() == "/start")
                 {
                     await botClient.SendTextMessageAsync(message.Chat, "Выбери клавиатуру:\n" +
@@ -41,11 +72,11 @@ namespace HSRBot
                             new KeyboardButton[]
                             {
                                 new KeyboardButton("Посчитать прыжки"),
-                                new KeyboardButton("Посчитать колличество нефрите через X дней"),
+                                new KeyboardButton("Посчитать колличество нефрита через X дней"),
                             },
                             new KeyboardButton[]
                             {
-                                new KeyboardButton("Test 3")
+                                new KeyboardButton("В главное меню")
                             },
                             new KeyboardButton[]
                             {
@@ -62,148 +93,10 @@ namespace HSRBot
                         replyMarkup: replyKeyboard);    
                         return;
                 }
-                
-                
-                try
-                            {
-                                
-                                switch (update.Type)
-                                {
-                                    case UpdateType.Message:
-                                    {
-                                        switch (message.Type)
-                                        {
-                                            case MessageType.Text:
-                                            {
-                                                if (message.Text == "Посчитать прыжки")
-                                                {
-                                                    numbersChatId = message.Chat.Id;
-                                                    await AskForNumbersAsync(numbersChatId.Value);
-                                                }
-                                                else
-                                                {
-                                                    await HandleReceivedNumbersAsync(message);
-                                                }
-                                                
-                                                 if (message.Text == "Посчитать колличество нефрите через X дней")
-                                                {
-                                                    daysChatId = message.Chat.Id;
-                                                    await AskForDaysAsync(daysChatId.Value);
-                                                }
-                                                else
-                                                {
-                                                    await HandleReceivedDaysAsync(message);
-                                                }
-                                                
-                                                if (message.Text == "Test 2")
-                                                {
-                                                    //await botClient.SendTextMessageAsync(message.Chat, "Что вас интересует?", replyMarkup: inlineKeyboard);
-                                                    await botClient.SendTextMessageAsync(message.Chat, "Var 2", replyToMessageId: message.MessageId);
-                                                    return;
-                                                }
-                                                return;
-                                            }
-                                            }        
-                                        return;
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.ToString());
-                            }
-                
-            }
-            static async Task AskForNumbersAsync(long numberschatId)
-            {
-                var message = "Пожалуйста, введите число нефрита:";
-                var replyMarkup = new ReplyKeyboardMarkup(new[]
-                {
-                    new[]
-                    {
-                        new KeyboardButton("Посчитать"),
-                    },
-                });
-
-                await bot.SendTextMessageAsync(numberschatId, message, replyMarkup: replyMarkup);
             }
             
-            static async Task HandleReceivedNumbersAsync(Message message)
-            {
-                var NumbersChatId = message.Chat.Id;
-
-                if (message.Text != null)
-                {
-                    if (double.TryParse(message.Text, out double inputNumber))
-                    {
-                        var result1 = (int)Math.Floor(inputNumber / 160);
-                        double result2 = inputNumber - (result1 * 160);
-                        await bot.SendTextMessageAsync(NumbersChatId, $"Колличество прыжков: {result1} + {result2} нефрита остаток");
-                    }
-                    else
-                    {
-                        await bot.SendTextMessageAsync(NumbersChatId, "Пожалуйста, введите число в правильном формате.");
-                    }
-                }
-            }
-            if (update.Type == UpdateType.Message)
-            {
-                var message = update.Message;
-
-                if (message.Text == "Посчитать колличество прыжков")
-                {
-                    await AskForNumbersAsync((numbersChatId.Value));
-                }
-                else
-                {
-                    await HandleReceivedNumbersAsync(message);
-                }
-            }
+           
             
-            static async Task AskForDaysAsync(long dayschatId)
-            {
-                var message = "Пожалуйста, введите число дней:";
-                var replyMarkup = new ReplyKeyboardMarkup(new[]
-                {
-                    new[]
-                    {
-                        new KeyboardButton("Посчитать число дней"),
-                    },
-                });
-
-                await bot.SendTextMessageAsync(dayschatId, message, replyMarkup: replyMarkup);
-            }
-            
-            static async Task HandleReceivedDaysAsync(Message message1)
-            {
-                var daysChatId = message1.Chat.Id;
-
-                if (message1.Text != null)
-                {
-                    if (double.TryParse(message1.Text, out double inputNumber2))
-                    {
-                        var result3 = inputNumber2 * 60;
-                        await bot.SendTextMessageAsync(daysChatId, $"Колличество нефрита через {inputNumber2} дней: {result3}");
-                    }
-                    else
-                    {
-                        await bot.SendTextMessageAsync(daysChatId, "Пожалуйста, введите число в правильном формате.");
-                    }
-                }
-            }
-            if (update.Type == UpdateType.Message)
-            {
-                var message = update.Message;
-
-                if (message.Text == "Посчитать")
-                {
-                    await AskForDaysAsync(daysChatId.Value);
-                }
-                else
-                {
-                    await HandleReceivedDaysAsync(message);
-                }
-            }
             
             else if (update.Type == UpdateType.CallbackQuery)
             {
@@ -212,6 +105,65 @@ namespace HSRBot
             
             
             
+        }
+        
+        static async Task HandleReceivedDaysAsync(Message message1)
+        {
+            var daysChatId = message1.Chat.Id;
+
+            if (message1.Text != null)
+            {
+                if (double.TryParse(message1.Text, out double inputNumber2))
+                {
+                    var f2p = inputNumber2 * 60;
+                    var not = inputNumber2 * 150;
+                    await bot.SendTextMessageAsync(daysChatId, $"Колличество нефрита через {inputNumber2} дней: С дейликов - {f2p}, с пропуском - {not}");
+                    await removeChatFromStage(daysChatId);
+                }
+                else
+                {
+                    await bot.SendTextMessageAsync(daysChatId, "Пожалуйста, введите число в правильном формате.");
+                }
+            }
+
+           
+            
+        }
+            
+        static async Task HandleReceivedNumbersAsync(Message message)
+        {
+            var NumbersChatId = message.Chat.Id;
+
+            if (message.Text != null)
+            {
+                if (double.TryParse(message.Text, out double inputNumber))
+                {
+                    var result1 = (int)Math.Floor(inputNumber / 160);
+                    double result2 = inputNumber - (result1 * 160);
+                    await bot.SendTextMessageAsync(NumbersChatId, $"Колличество прыжков: {result1} + {result2} нефрита остаток");
+                    await removeChatFromStage(NumbersChatId);
+                }
+                else
+                {
+                    await bot.SendTextMessageAsync(NumbersChatId, "Пожалуйста, введите число в правильном формате.");
+                }
+            }
+           
+        }
+        
+        static async Task setChatInStage(long chatId, string stageName)
+        {
+            stages.Add(new(chatId, stageName));
+        }
+
+        static async Task<string> getChatStage(long chatId)
+        {
+            return stages.FirstOrDefault(x => x.Item1 == chatId).Item2;
+        }
+
+        static async Task removeChatFromStage(long chatId)
+        {
+            stages.RemoveAll(x => x.Item1 == chatId);
         }
 
         public static void Main(string[] args)
