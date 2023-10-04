@@ -86,27 +86,16 @@ namespace HSRBot
                     {
                         ResizeKeyboard = true,
                         };
-                    
-                             
-                    
-                        await botClient.SendTextMessageAsync(message.Chat, "Что вас интересует?",
+                    await botClient.SendTextMessageAsync(message.Chat, "Что вас интересует?",
                         replyMarkup: replyKeyboard);    
                         return;
                 }
             }
-            
-           
-            
-            
             else if (update.Type == UpdateType.CallbackQuery)
             {
                 var callbackQuery = update.CallbackQuery;
             }
-            
-            
-            
         }
-        
         static async Task HandleReceivedDaysAsync(Message message1)
         {
             var daysChatId = message1.Chat.Id;
@@ -125,11 +114,7 @@ namespace HSRBot
                     await bot.SendTextMessageAsync(daysChatId, "Пожалуйста, введите число в правильном формате.");
                 }
             }
-
-           
-            
         }
-            
         static async Task HandleReceivedNumbersAsync(Message message)
         {
             var NumbersChatId = message.Chat.Id;
@@ -148,24 +133,19 @@ namespace HSRBot
                     await bot.SendTextMessageAsync(NumbersChatId, "Пожалуйста, введите число в правильном формате.");
                 }
             }
-           
         }
-        
         static async Task setChatInStage(long chatId, string stageName)
         {
             stages.Add(new(chatId, stageName));
         }
-
         static async Task<string> getChatStage(long chatId)
         {
             return stages.FirstOrDefault(x => x.Item1 == chatId).Item2;
         }
-
         static async Task removeChatFromStage(long chatId)
         {
             stages.RemoveAll(x => x.Item1 == chatId);
         }
-
         public static void Main(string[] args)
         {
             Console.WriteLine("Let`s go " + bot.GetMeAsync().Result.FirstName);
