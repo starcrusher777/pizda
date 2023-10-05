@@ -33,6 +33,8 @@ namespace HSRBot
                         break;
                     case "Посчитать колличество нефрита через X дней": await HandleReceivedDaysAsync(message);
                         break;
+                    case "В главное меню": await toMainMenu(message);
+                        break;
                 }
                 return;
             }
@@ -50,7 +52,6 @@ namespace HSRBot
                 await setChatInStage(message.Chat.Id, "Посчитать колличество нефрита через X дней");
                 return;
             }
-            
             
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
            
@@ -88,7 +89,7 @@ namespace HSRBot
                         };
                     await botClient.SendTextMessageAsync(message.Chat, "Что вас интересует?",
                         replyMarkup: replyKeyboard);    
-                        return;
+                        
                 }
             }
             else if (update.Type == UpdateType.CallbackQuery)
@@ -146,23 +147,50 @@ namespace HSRBot
         {
             stages.RemoveAll(x => x.Item1 == chatId);
         }
-        public static void Main(string[] args)
+
+        static async Task toMainMenu(Message message)
         {
+            if (message.Text == "В главное меню")
+            {
+                var replyKeyboard = new ReplyKeyboardMarkup(
+                    new List<KeyboardButton[]>()
+                    {
+                        new KeyboardButton[]
+                        {
+                            new KeyboardButton("Посчитать прыжки"),
+                            new KeyboardButton("Посчитать колличество нефрита через X дней"),
+                        },
+                        new KeyboardButton[]
+                        {
+                            new KeyboardButton("В главное меню")
+                        }
+                    })
+                {
+                    ResizeKeyboard = true,
+                };
+                await bot.SendTextMessageAsync(message.Chat, "Что вас интересует?",
+                    replyMarkup: replyKeyboard);    
+                return;
+            }
+        }
+
+        public static void Main(string[] args) 
+            {
             Console.WriteLine("Let`s go " + bot.GetMeAsync().Result.FirstName);
 
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
-            {
-                AllowedUpdates = {  }, 
-            };
+                {
+                    AllowedUpdates = {  }, 
+                };
 
             bot.StartReceiving(
                 (client, update, arg3) => HandleUpdateAsync(client, update, arg3),
                 (client, exception, arg3) => HandleErrorAsync(client, exception, arg3),
                 receiverOptions,
                 cancellationToken
-            );
+                              );
 
             Console.ReadLine();
         }
